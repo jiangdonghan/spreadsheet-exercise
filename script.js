@@ -302,6 +302,20 @@ class SheetTool {
     return letter;
   }
 
+  static transformLetterToNumber(letter) {
+    const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const firstLetter = letter.charAt(0);
+    const secondLetter = letter.charAt(1);
+    if (!secondLetter) {
+      return alphabet.indexOf(firstLetter) + 1;
+    }
+    return (
+      alphabet.length * (alphabet.indexOf(firstLetter) + 1) +
+      alphabet.indexOf(secondLetter) +
+      1
+    );
+  }
+
   static isFunctionExpression(input) {
     if (!SheetTool.isSpecialExpression(input)) {
       return false;
@@ -333,8 +347,9 @@ class SheetTool {
     // alphabet
     const fromCol = fromCellId.replace(regexMatchNumber, "");
     const toCol = toCellId.replace(regexMatchNumber, "");
-
     const cellIdList = [];
+
+    //eg. a1:d1
     if (fromCol === toCol) {
       for (let i = fromRow; i <= toRow; i++) {
         for (let j = fromCol; j <= toCol; j++) {
@@ -343,7 +358,14 @@ class SheetTool {
       }
     }
 
-    //todo eg. b7:f7
+    //eg. b7:f7
+    if (fromRow === toRow) {
+      const fromColNumber = SheetTool.transformLetterToNumber(fromCol);
+      const toColNumber = SheetTool.transformLetterToNumber(toCol);
+      for (let i = fromColNumber; i <= toColNumber; i++) {
+        cellIdList.push(SheetTool.transformNumberToLetter(i) + fromRow);
+      }
+    }
 
     return cellIdList;
   }
