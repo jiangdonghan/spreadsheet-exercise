@@ -26,7 +26,7 @@ class SpreedSheet {
     this.clearTable();
     setTimeout(() => {
       this.init();
-    }, 500);
+    }, 100);
   }
 
   clearTable() {
@@ -242,7 +242,38 @@ class Cell {
         }
 
         if (SheetTool.isCalculationExpression(inputUpperCase)) {
-          // todo calculate output and add reference to other cell
+          const regexForBasicOperation = /[+\-*/]/;
+          const operation = inputUpperCase.match(regexForBasicOperation)[0];
+          const params = inputUpperCase.substring(1).split(operation);
+          const cell1 = that.spreadSheet.getCellData(params[0]);
+          const cell1Num = Number(cell1.getCellOutput());
+          if (cell1.referenceCellList.indexOf(that.id) === -1) {
+            cell1.addReferenceCellId(that.id);
+          }
+
+          const cell2 = that.spreadSheet.getCellData(params[1]);
+          const cell2Num = Number(cell2.getCellOutput());
+          if (cell2.referenceCellList.indexOf(that.id) === -1) {
+            cell2.addReferenceCellId(that.id);
+          }
+
+          switch (operation) {
+            case "+":
+              target.output = cell1Num + cell2Num;
+              break;
+            case "-":
+              target.output = cell1Num - cell2Num;
+              break;
+            case "*":
+              target.output = cell1Num * cell2Num;
+              break;
+            case "/":
+              target.output = cell1Num / cell2Num;
+              break;
+            default:
+              target.output = "!ERROR";
+              break;
+          }
         }
 
         return true;
