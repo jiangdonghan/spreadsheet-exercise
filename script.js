@@ -90,26 +90,24 @@ class SpreedSheet {
     };
 
     // build spreadsheet
-    for (let i = 0; i < this.rowSize + 1; i++) {
+
+    const row = document.getElementById("spread-sheet").insertRow(-1);
+    row.insertCell(-1).innerHTML = "";
+    for (let j = 0; j < this.columnSize; j++) {
+      row.insertCell(-1).innerHTML = SheetTool.transformNumberToLetter(j + 1);
+    }
+
+    for (let i = 1; i < this.rowSize + 1; i++) {
       const row = document.getElementById("spread-sheet").insertRow(-1);
-      if (i === 0) {
-        row.insertCell(-1).innerHTML = "";
-        for (let j = 0; j < this.columnSize; j++) {
-          row.insertCell(-1).innerHTML = SheetTool.transformNumberToLetter(
-            j + 1
-          );
+      for (let j = 0; j < this.columnSize + 1; j++) {
+        let cell = this.getCellData(SheetTool.transformNumberToLetter(j) + i);
+        if (!cell) {
+          cell = new Cell(SpreedSheet.getInstance(), i, j);
         }
-      } else {
-        for (let j = 0; j < this.columnSize + 1; j++) {
-          let cell = this.getCellData(SheetTool.transformNumberToLetter(j) + i);
-          if (!cell) {
-            cell = new Cell(SpreedSheet.getInstance(), i, j);
-          }
-          this.setCellData(cell);
-          j === 0
-            ? (row.insertCell(-1).innerHTML = `${i}`)
-            : row.insertCell(-1).appendChild(cell.getCellElement());
-        }
+        this.setCellData(cell);
+        j === 0
+          ? (row.insertCell(-1).innerHTML = `${i}`)
+          : row.insertCell(-1).appendChild(cell.getCellElement());
       }
     }
   }
