@@ -183,15 +183,6 @@ class Cell {
     inputEl.onblur = () => {
       inputEl.classList.remove("cell-focus");
       inputEl.value = this.getCellOutput();
-
-      if (this.referenceCellList.length > 0) {
-        for (const id of this.referenceCellList) {
-          const cell = this.spreadSheet.getCellData(id);
-          //recalculate cell value
-          cell.reCalculateOutput();
-          cell.getCellElement().value = cell.getCellOutput();
-        }
-      }
     };
 
     inputEl.oninput = (val) => {
@@ -288,6 +279,14 @@ class Cell {
           }
         }
 
+        if (that.referenceCellList.length > 0) {
+          for (const id of that.referenceCellList) {
+            const cell = that.spreadSheet.getCellData(id);
+            //recalculate cell value
+            cell.reCalculateOutput();
+            cell.getCellElement().value = cell.getCellOutput();
+          }
+        }
         return true;
       },
     });
