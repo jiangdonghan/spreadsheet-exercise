@@ -21,6 +21,7 @@ class SpreedSheet {
     return this.spreadSheetCellData[id];
   }
 
+  //todo add save function
   reload() {
     this.clearTable();
     setTimeout(() => {
@@ -33,6 +34,14 @@ class SpreedSheet {
     const displayInput = DomTool.getDisplayInput();
     displayInput.value = "";
     spreadSheetEl.innerHTML = "";
+  }
+
+  sumCellsValue(cellIdList) {
+    return cellIdList.reduce((sum, cellId) => {
+      const cell = this.getCellData(cellId);
+      //todo check if cell is number
+      return sum + Number(cell.getCellOutput());
+    }, 0);
   }
 
   init() {
@@ -160,7 +169,12 @@ class Cell {
       inputEl.value = this.getCellOutput();
 
       if (this.referenceCellList.length > 0) {
-        // todo change other cell value
+        for (const id of this.referenceCellList) {
+          const cell = this.spreadSheet.getCellData(id);
+          //recalculate cell value
+          cell.reCalculateOutput();
+          cell.getCellElement().value = cell.getCellOutput();
+        }
       }
     };
 
@@ -175,6 +189,12 @@ class Cell {
     this.addProxyToCellValue();
   }
 
+  reCalculateOutput() {
+    console.log("reCalculateOutput: ", this.id);
+    console.log(this.getCellInput());
+    this.setCellValue(this.getCellInput());
+  }
+
   addProxyToCellValue() {
     const that = this;
     this.cellValue = new Proxy(this.cellValue, {
@@ -187,11 +207,41 @@ class Cell {
 
         that.getCellElement().value = value;
 
-        if (SheetTool.isFunctionExpression()) {
-          // todo calculate output and add reference to other cell
+        const inputUpperCase = value.toUpperCase();
+        if (SheetTool.isFunctionExpression(inputUpperCase)) {
+          console.log("isFunctionExpression");
+          const functionName = inputUpperCase.substring(1).split("(")[0];
+          const functionParams = inputUpperCase
+            .substring(1)
+            .split("(")[1]
+            .split(")")[0]
+            .split(":");
+          switch (functionName) {
+            case "SUM":
+              const cellIdList = SheetTool.getCellIdListBetween(
+                functionParams[0],
+                functionParams[1]
+              );
+              for (const cellId of cellIdList) {
+                const cell = that.spreadSheet.getCellData(cellId);
+                //todo check
+                if (cell.referenceCellList.indexOf(that.id) === -1) {
+                  cell.addReferenceCellId(that.id);
+                }
+              }
+              target.output = that.spreadSheet.sumCellsValue(cellIdList);
+              console.log(target.output);
+              break;
+            case "AVG":
+            case "MAX":
+            case "MIN":
+            default:
+              target.output = "!ERROR";
+              break;
+          }
         }
 
-        if (SheetTool.isCalculationExpression()) {
+        if (SheetTool.isCalculationExpression(inputUpperCase)) {
           // todo calculate output and add reference to other cell
         }
 
@@ -214,11 +264,51 @@ class SheetTool {
     return letter;
   }
 
-  //todo
-  static isFunctionExpression() {}
+  static isFunctionExpression(input) {
+    if (!SheetTool.isSpecialExpression(input)) {
+      return false;
+    }
+    const inputUpperCase = input.toUpperCase();
+    const regex = /^=(SUM|AVG|MIN|MAX)\(([a-zA-Z]+[0-9]+):([a-zA-Z]+[0-9]+)\)/;
+    return regex.test(inputUpperCase);
+  }
 
-  //todo
-  static isCalculationExpression() {}
+  static isCalculationExpression(input) {
+    if (!SheetTool.isSpecialExpression(input)) {
+      return false;
+    }
+    const inputUpperCase = input.toUpperCase();
+    const regex = /^=([a-zA-Z]+[0-9]+)[+\-*/]([a-zA-Z]+[0-9]+)/;
+    return regex.test(inputUpperCase);
+  }
+
+  static isSpecialExpression(input) {
+    return input.startsWith("=");
+  }
+
+  static getCellIdListBetween(fromCellId, toCellId) {
+    const regexMatchAlphabet = /[a-zA-Z]/g;
+    const regexMatchNumber = /[0-9]/g;
+    // number
+    const fromRow = fromCellId.replace(regexMatchAlphabet, "");
+    const toRow = toCellId.replace(regexMatchAlphabet, "");
+    // alphabet
+    const fromCol = fromCellId.replace(regexMatchNumber, "");
+    const toCol = toCellId.replace(regexMatchNumber, "");
+
+    const cellIdList = [];
+    if (fromCol === toCol) {
+      for (let i = fromRow; i <= toRow; i++) {
+        for (let j = fromCol; j <= toCol; j++) {
+          cellIdList.push(j + i);
+        }
+      }
+    }
+
+    //todo eg. b7:f7
+
+    return cellIdList;
+  }
 }
 
 class DomTool {
