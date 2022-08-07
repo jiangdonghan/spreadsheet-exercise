@@ -93,6 +93,12 @@ class SpreedSheet {
   init(){
     const that = this
 
+    const displayInput = DomTool.getDisplayInput()
+    displayInput.oninput = function(){
+      const id = displayInput.getAttribute('data-id');
+      that.setCellValue(id, displayInput.value);
+    }
+
     const styleButtons = DomTool.getButtonsForStyling()
     for(const styleButton of styleButtons){
       styleButton.addEventListener('click', function(){
@@ -118,7 +124,9 @@ class SpreedSheet {
           inputEl.id = SheetTool.transformNumberToLetter(j) + (i);
           inputEl.onfocus = function(){
             inputEl.value = that.getCellInput(inputEl.id);
+            displayInput.value = inputEl.value
             inputEl.classList.add('cell-focus');
+            displayInput.value = inputEl.value
           }
 
           inputEl.onblur = function(){
@@ -131,6 +139,8 @@ class SpreedSheet {
             for(const styleButton of styleButtons){
               styleButton.setAttribute('data-id', inputEl.id);
             }
+            displayInput.value = inputEl.value;
+            displayInput.setAttribute('data-id', inputEl.id);
           }
 
           inputEl.value = that.getCellOutput(inputEl.id);
