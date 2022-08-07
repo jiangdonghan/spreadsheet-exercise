@@ -29,3 +29,39 @@ table input{
 .cell-focus{
   border: 1px solid #1967de;
 }
+
+.font__bold{
+  font-weight: bold;
+}
+
+.font__italic{
+  font-style: italic;
+}
+
+.font__underline{
+  text-decoration: underline;
+}
+
+.tool-bar{
+  padding-left: 100px;
+  width: 100vw;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.tool-bar button{
+  margin-right: 10px;
+  margin-left: 10px;
+  cursor: pointer;
+}
+
+.tool-bar input{
+  width: 100%;
+  border: 1px solid #dddddd;
+}
+.long-input{
+  width: 100%;
+}
+.edit-wrapper{
+  min-width: 200px;
+}

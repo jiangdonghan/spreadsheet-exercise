@@ -35,6 +35,25 @@ class SpreedSheet {
     this.spreadSheetData[key] = rawInput;
   }
 
+
+  addStylesToCell(id, style){
+    const cell = document.getElementById(id);
+    if(!cell){
+      return
+    }
+    cell.classList.add(style);
+  }
+
+  removeStylesFromCell(id, style){
+    const cell = document.getElementById(id);
+    if(!cell){
+      return
+    }
+    cell.classList.remove(style);
+  }
+
+
+
   addProxyToSpreadSheetData(){
     this.spreadSheetData = new Proxy(this.spreadSheetData, {
       get: function(target, key){
@@ -74,6 +93,15 @@ class SpreedSheet {
   init(){
     const that = this
 
+    const styleButtons = DomTool.getButtonsForStyling()
+    for(const styleButton of styleButtons){
+      styleButton.addEventListener('click', function(){
+        const style = this.getAttribute('data-style');
+        const id = this.getAttribute('data-id');
+        that.addStylesToCell(id, style);
+      })
+    }
+
     // build spreadsheet
     for (let i = 0; i < this.rowSize + 1; i++) {
       const row = document.getElementById("spread-sheet").insertRow(-1);
@@ -100,6 +128,9 @@ class SpreedSheet {
 
           inputEl.oninput = function(val){
             that.setCellValue(inputEl.id, inputEl.value);
+            for(const styleButton of styleButtons){
+              styleButton.setAttribute('data-id', inputEl.id);
+            }
           }
 
           inputEl.value = that.getCellOutput(inputEl.id);
@@ -136,6 +167,17 @@ class SheetTool {
 
   }
 
+}
+
+class DomTool {
+  constructor(){}
+  static getDisplayInput(){
+    return document.getElementById("display-input")
+  }
+
+  static getButtonsForStyling(){
+    return document.getElementsByClassName("style-btn");
+  }
 }
 
 const spreadsheet = SpreedSheet.getInstance();
