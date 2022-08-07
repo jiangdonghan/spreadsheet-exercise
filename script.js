@@ -50,8 +50,21 @@ class SpreedSheet {
     const displayInput = DomTool.getDisplayInput();
     displayInput.oninput = function () {
       const id = displayInput.getAttribute("data-id");
+      if (!id) {
+        return;
+      }
       const cell = that.getCellData(id);
       cell.setCellValue(displayInput.value);
+    };
+
+    displayInput.onblur = function () {
+      const id = displayInput.getAttribute("data-id");
+      if (!id) {
+        return;
+      }
+      const cell = that.getCellData(id);
+      cell.reCalculateOutput();
+      cell.getCellElement().value = cell.getCellOutput();
     };
 
     const styleButtons = DomTool.getButtonsForStyling();
@@ -190,8 +203,6 @@ class Cell {
   }
 
   reCalculateOutput() {
-    console.log("reCalculateOutput: ", this.id);
-    console.log(this.getCellInput());
     this.setCellValue(this.getCellInput());
   }
 
@@ -209,7 +220,6 @@ class Cell {
 
         const inputUpperCase = value.toUpperCase();
         if (SheetTool.isFunctionExpression(inputUpperCase)) {
-          console.log("isFunctionExpression");
           const functionName = inputUpperCase.substring(1).split("(")[0];
           const functionParams = inputUpperCase
             .substring(1)
@@ -230,7 +240,6 @@ class Cell {
                 }
               }
               target.output = that.spreadSheet.sumCellsValue(cellIdList);
-              console.log(target.output);
               break;
             case "AVG":
             case "MAX":
