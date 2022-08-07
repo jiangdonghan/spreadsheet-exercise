@@ -21,6 +21,20 @@ class SpreedSheet {
     return this.spreadSheetCellData[id];
   }
 
+  reload() {
+    this.clearTable();
+    setTimeout(() => {
+      this.init();
+    }, 500);
+  }
+
+  clearTable() {
+    const spreadSheetEl = document.getElementById("spread-sheet");
+    const displayInput = DomTool.getDisplayInput();
+    displayInput.value = "";
+    spreadSheetEl.innerHTML = "";
+  }
+
   init() {
     const that = this;
 
@@ -47,6 +61,11 @@ class SpreedSheet {
         }
       });
     }
+
+    const refreshBtn = document.getElementById("refresh-btn");
+    refreshBtn.onclick = function () {
+      that.reload();
+    };
 
     // build spreadsheet
     for (let i = 0; i < this.rowSize + 1; i++) {
