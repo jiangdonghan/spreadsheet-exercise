@@ -3,18 +3,8 @@
 class SpreedSheet {
   rowSize = 100;
   columnSize = 100;
-  /**
-   * @type {{
-   *   input: string,
-   *   output: string,
-   *   referenceList: string[]
-   *   styleList: string[]
-   * }}
-   */
-  spreadSheetData = {};
-  constructor() {
-    this.addProxyToSpreadSheetData();
-  }
+  spreadSheetCellData = {};
+  constructor() {}
 
   static getInstance() {
     if (!this.instance) {
@@ -23,71 +13,12 @@ class SpreedSheet {
     return this.instance;
   }
 
-  getCellOutput(key) {
-    return this.spreadSheetData[key] ? this.spreadSheetData[key].output : "";
+  setCellData(cell) {
+    this.spreadSheetCellData[cell.id] = cell;
   }
 
-  getCellInput(key) {
-    return this.spreadSheetData[key] ? this.spreadSheetData[key].input : "";
-  }
-
-  setCellValue(key, rawInput) {
-    this.spreadSheetData[key] = rawInput;
-  }
-
-  addStylesToCell(id, style) {
-    const cell = document.getElementById(id);
-    if (!cell) {
-      return;
-    }
-    cell.classList.add(style);
-  }
-
-  removeStylesFromCell(id, style) {
-    const cell = document.getElementById(id);
-    if (!cell) {
-      return;
-    }
-    cell.classList.remove(style);
-  }
-
-  addProxyToSpreadSheetData() {
-    this.spreadSheetData = new Proxy(this.spreadSheetData, {
-      get: function (target, key) {
-        return target[key];
-      },
-      set: function (target, key, value) {
-        const referenceList = target.hasOwnProperty(key)
-          ? target[key].referenceList
-          : [];
-        const styleList = target.hasOwnProperty(key)
-          ? target[key].styleList
-          : [];
-        const cellData = {
-          input: value,
-          output: value,
-          referenceList: referenceList,
-          styleList: styleList,
-        };
-
-        document.getElementById(key).value = value;
-
-        if (SheetTool.isFunctionExpression(value)) {
-          // todo calculate output
-        }
-        if (SheetTool.isCalculationExpression(value)) {
-          // todo calculate output
-        }
-
-        target[key] = cellData;
-
-        for (const reference of referenceList) {
-          const referenceCell = document.getElementById(reference);
-          // update reference cell
-        }
-        return true;
-      },
-    });
+  getCellData(id) {
+    return this.spreadSheetCellData[id];
   }
 
   init() {
@@ -96,15 +27,24 @@ class SpreedSheet {
     const displayInput = DomTool.getDisplayInput();
     displayInput.oninput = function () {
       const id = displayInput.getAttribute("data-id");
-      that.setCellValue(id, displayInput.value);
+      const cell = that.getCellData(id);
+      cell.setCellValue(displayInput.value);
     };
 
     const styleButtons = DomTool.getButtonsForStyling();
     for (const styleButton of styleButtons) {
-      styleButton.addEventListener("click", function () {
+      styleButton.addEventListener("click", function (e) {
         const style = this.getAttribute("data-style");
         const id = this.getAttribute("data-id");
-        that.addStylesToCell(id, style);
+        const cell = that.getCellData(id);
+        if (!cell) {
+          return;
+        }
+        if (cell.getCellElement().classList.contains(style)) {
+          cell.removeStyle(style);
+        } else {
+          cell.addStyle(style);
+        }
       });
     }
 
@@ -120,39 +60,125 @@ class SpreedSheet {
         }
       } else {
         for (let j = 0; j < this.columnSize + 1; j++) {
-          const inputEl = document.createElement("input");
-          inputEl.type = "text";
-          inputEl.className = "cell";
-          inputEl.id = SheetTool.transformNumberToLetter(j) + i;
-          inputEl.onfocus = function () {
-            inputEl.value = that.getCellInput(inputEl.id);
-            displayInput.value = inputEl.value;
-            inputEl.classList.add("cell-focus");
-            displayInput.value = inputEl.value;
-          };
-
-          inputEl.onblur = function () {
-            inputEl.classList.remove("cell-focus");
-            inputEl.value = that.getCellOutput(inputEl.id);
-          };
-
-          inputEl.oninput = function (val) {
-            that.setCellValue(inputEl.id, inputEl.value);
-            for (const styleButton of styleButtons) {
-              styleButton.setAttribute("data-id", inputEl.id);
-            }
-            displayInput.value = inputEl.value;
-            displayInput.setAttribute("data-id", inputEl.id);
-          };
-
-          inputEl.value = that.getCellOutput(inputEl.id);
-
+          let cell = this.getCellData(SheetTool.transformNumberToLetter(j) + i);
+          if (!cell) {
+            cell = new Cell(SpreedSheet.getInstance(), i, j);
+          }
+          this.setCellData(cell);
           j === 0
             ? (row.insertCell(-1).innerHTML = `${i}`)
-            : row.insertCell(-1).appendChild(inputEl);
+            : row.insertCell(-1).appendChild(cell.getCellElement());
         }
       }
     }
+  }
+}
+
+class Cell {
+  cellValue = {
+    input: "",
+    output: "",
+  };
+  referenceCellList = [];
+  constructor(spreadSheet, row, column) {
+    this.spreadSheet = spreadSheet;
+    this.id = SheetTool.transformNumberToLetter(column) + row;
+    this.init();
+  }
+  getCellOutput() {
+    return this.cellValue.output;
+  }
+
+  getCellInput() {
+    return this.cellValue.input;
+  }
+
+  setCellValue(rawInput) {
+    this.cellValue.input = rawInput;
+  }
+
+  getCellElement() {
+    return this.inputEl;
+  }
+
+  addStyle(style) {
+    this.getCellElement().classList.add(style);
+  }
+
+  removeStyle(style) {
+    this.getCellElement().classList.remove(style);
+  }
+
+  addReferenceCellId(id) {
+    this.referenceCellList.push(id);
+  }
+
+  init() {
+    const displayInput = DomTool.getDisplayInput();
+    const styleButtons = DomTool.getButtonsForStyling("style-btn");
+    const inputEl = document.createElement("input");
+    inputEl.type = "text";
+    inputEl.className = "cell";
+    inputEl.id = this.id;
+    inputEl.onfocus = () => {
+      inputEl.value = this.getCellInput();
+      displayInput.value = inputEl.value;
+      inputEl.classList.add("cell-focus");
+      for (const styleButton of styleButtons) {
+        styleButton.setAttribute("data-id", inputEl.id);
+      }
+    };
+
+    inputEl.addEventListener("keypress", (e) => {
+      if (e.code === "Enter") {
+        inputEl.blur();
+        // todo focus next cell
+      }
+    });
+
+    inputEl.onblur = () => {
+      inputEl.classList.remove("cell-focus");
+      inputEl.value = this.getCellOutput();
+
+      if (this.referenceCellList.length > 0) {
+        // todo change other cell value
+      }
+    };
+
+    inputEl.oninput = (val) => {
+      displayInput.value = inputEl.value;
+      this.setCellValue(inputEl.value);
+      displayInput.setAttribute("data-id", inputEl.id);
+    };
+
+    inputEl.value = this.getCellOutput();
+    this.inputEl = inputEl;
+    this.addProxyToCellValue();
+  }
+
+  addProxyToCellValue() {
+    const that = this;
+    this.cellValue = new Proxy(this.cellValue, {
+      get: function (target, key) {
+        return target[key];
+      },
+      set: function (target, key, value) {
+        target.input = value;
+        target.output = value;
+
+        that.getCellElement().value = value;
+
+        if (SheetTool.isFunctionExpression()) {
+          // todo calculate output and add reference to other cell
+        }
+
+        if (SheetTool.isCalculationExpression()) {
+          // todo calculate output and add reference to other cell
+        }
+
+        return true;
+      },
+    });
   }
 }
 
