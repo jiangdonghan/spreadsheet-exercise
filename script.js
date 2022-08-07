@@ -4,49 +4,12 @@ class SpreedSheet {
   rowSize = 100;
   columnSize = 100;
   spreadSheetCellData = {};
-  constructor() {}
-
-  static getInstance() {
-    if (!this.instance) {
-      this.instance = new SpreedSheet();
-    }
-    return this.instance;
+  constructor() {
+    this.prepareToolbar();
   }
 
-  setCellData(cell) {
-    this.spreadSheetCellData[cell.id] = cell;
-  }
-
-  getCellData(id) {
-    return this.spreadSheetCellData[id];
-  }
-
-  //todo add save function
-  reload() {
-    this.clearTable();
-    setTimeout(() => {
-      this.init();
-    }, 100);
-  }
-
-  clearTable() {
-    const spreadSheetEl = document.getElementById("spread-sheet");
-    const displayInput = DomTool.getDisplayInput();
-    displayInput.value = "";
-    spreadSheetEl.innerHTML = "";
-  }
-
-  sumCellsValue(cellIdList) {
-    return cellIdList.reduce((sum, cellId) => {
-      const cell = this.getCellData(cellId);
-      //todo check if cell is number
-      return sum + Number(cell.getCellOutput());
-    }, 0);
-  }
-
-  init() {
+  prepareToolbar() {
     const that = this;
-
     const displayInput = DomTool.getDisplayInput();
     displayInput.oninput = function () {
       const id = displayInput.getAttribute("data-id");
@@ -88,6 +51,48 @@ class SpreedSheet {
     refreshBtn.onclick = function () {
       that.reload();
     };
+  }
+
+  static getInstance() {
+    if (!this.instance) {
+      this.instance = new SpreedSheet();
+    }
+    return this.instance;
+  }
+
+  setCellData(cell) {
+    this.spreadSheetCellData[cell.id] = cell;
+  }
+
+  getCellData(id) {
+    return this.spreadSheetCellData[id];
+  }
+
+  //todo add save function
+  reload() {
+    this.clearTable();
+    setTimeout(() => {
+      this.init();
+    }, 100);
+  }
+
+  clearTable() {
+    const spreadSheetEl = document.getElementById("spread-sheet");
+    const displayInput = DomTool.getDisplayInput();
+    displayInput.value = "";
+    spreadSheetEl.innerHTML = "";
+  }
+
+  sumCellsValue(cellIdList) {
+    return cellIdList.reduce((sum, cellId) => {
+      const cell = this.getCellData(cellId);
+      //todo check if cell is number
+      return sum + Number(cell.getCellOutput());
+    }, 0);
+  }
+
+  init() {
+    const that = this;
 
     // build spreadsheet
 
@@ -232,7 +237,6 @@ class Cell {
               );
               for (const cellId of cellIdList) {
                 const cell = that.spreadSheet.getCellData(cellId);
-                //todo check
                 if (cell.referenceCellList.indexOf(that.id) === -1) {
                   cell.addReferenceCellId(that.id);
                 }
@@ -249,6 +253,7 @@ class Cell {
         }
 
         if (SheetTool.isCalculationExpression(inputUpperCase)) {
+          //todo support complex calculation expression
           const regexForBasicOperation = /[+\-*/]/;
           const operation = inputUpperCase.match(regexForBasicOperation)[0];
           const params = inputUpperCase.substring(1).split(operation);
