@@ -1,4 +1,4 @@
-## SpreadSheet Exercise
+## Spreadsheet Exercise
 Open index.html in your browser.
 
 ### Future Plan
